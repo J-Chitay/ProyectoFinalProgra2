@@ -8,54 +8,41 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/clientes")
-@CrossOrigin(origins = "*")
+@RequestMapping("/clientes")
+@CrossOrigin(origins = "http://localhost:3000") // permite solicitudes desde React
 public class ClienteController {
     private final ClienteService service;
 
     public ClienteController(ClienteService service) {
         this.service = service;
     }
-    //Creamos el registro
-    @PostMapping("/registrar")
+
+    @PostMapping
     public ResponseEntity<?> registrar(@RequestBody Cliente cliente) {
         try {
-            Cliente nuevo = service.registrar(cliente);
-            return ResponseEntity.ok("Cliente registrado con ID " + nuevo.getId());
-        } catch (RuntimeException e) {
+            return ResponseEntity.ok(service.registrarCliente(cliente));
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    //Listamos clientes
     @GetMapping
-    public List<Cliente> listarClientes() {
-        return service.listarTodos();
+    public List<Cliente> listar() {
+        return service.listarClientes();
     }
 
-    // Buscar cliente por id
-    @GetMapping("/{id}")
-    public ResponseEntity<Cliente> buscarCliente(@PathVariable Long id) {
-        return service.buscarCliente(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // Actualizar cliente
     @PutMapping("/{id}")
-    public ResponseEntity<Cliente> actualizarCliente(@PathVariable Long id,
-                                                     @RequestBody Cliente clienteActualizado) {
-        return service.actualizarCliente(id, clienteActualizado)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Cliente cliente) {
+        try {
+            return ResponseEntity.ok(service.actualizarCliente(id, cliente));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarCliente(@PathVariable Long id) {
-        boolean eliminado = service.eliminar(id);
-        if (eliminado) {
-            return ResponseEntity.ok("Cliente eliminado correctamente");
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        service.eliminarCliente(id);
+        return ResponseEntity.ok("Cliente eliminado");
     }
 }

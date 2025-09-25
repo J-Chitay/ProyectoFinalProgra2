@@ -34,10 +34,11 @@ public class ClienteValidator {
             throw new Exception("Email ya registrado");
         }
 
-        boolean agregado = repo.agregar(cliente);
-        if (!agregado) {
+        Cliente agregado = repo.save(cliente);
+        if (agregado == null) {
             throw new Exception("No se pudo registrar el cliente");
         }
+        repo.save(cliente);
         return cliente;
     }
 }

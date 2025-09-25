@@ -1,12 +1,8 @@
 package gt.edu.umg.programacion2.proyectofinal.inventoryFinal.service;
 
-import gt.edu.umg.programacion2.proyectofinal.inventoryFinal.repository.ClienteRepository;
 import gt.edu.umg.programacion2.proyectofinal.inventoryFinal.model.Cliente;
+import gt.edu.umg.programacion2.proyectofinal.inventoryFinal.repository.ClienteRepository;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
-
-
-import java.util.List;
 
 @Service
 public class ClienteService {
@@ -16,34 +12,44 @@ public class ClienteService {
         this.repo = repo;
     }
 
-    public Cliente registrar(Cliente c) {
-        return repo.save(c);
-    }
-
-    public List<Cliente> listarTodos() {
-        return repo.findAll();
-    }
-
-    // Buscar por ID
-    public Optional<Cliente> buscarCliente(Long id) {
-        return repo.findById(id);
-    }
-
-    // Actualizar cliente
-    public Optional<Cliente> actualizarCliente(Long id, Cliente clienteActualizado) {
-        return repo.findById(id).map(cliente -> {
-            cliente.setNombre(clienteActualizado.getNombre());
-            cliente.setEmail(clienteActualizado.getEmail());
-            return repo.save(cliente);
-        });
-    }
-
-    public boolean eliminar(Long id) {
-        if (repo.findById(id).isPresent()) {
-            repo.deleteById(id);
-            return true;
+    public Cliente registrarCliente(Cliente cliente) throws Exception {
+        if (cliente.getNombre() == null || cliente.getNombre().isBlank() ||
+                cliente.getEmail() == null || cliente.getEmail().isBlank() ||
+                cliente.getPassword() == null || cliente.getPassword().isBlank()) {
+            throw new Exception("Todos los campos son obligatorios");
         }
-        return false;
+
+        // Validación confirmación contraseña
+        if (!cliente.getPassword().equals(cliente.getConfirmPassword())) {
+            throw new Exception("Las contraseñas no coinciden");
+        }
+
+        // Validación email único
+        if (repo.findByEmail(cliente.getEmail()).isPresent()) {
+            throw new Exception("El email ya está registrado");
+        }
+
+        // Guardamos sin confirmPassword (es @Transient, no se guarda en DB)
+        return repo.save(cliente);
+    }
+
+    public Cliente actualizarCliente(Long id, Cliente cliente) throws Exception {
+        return repo.findById(id)
+                .map(c -> {
+                    c.setNombre(cliente.getNombre());
+                    c.setEmail(cliente.getEmail());
+                    c.setPassword(cliente.getPassword());
+                    return repo.save(c);
+                })
+                .orElseThrow(() -> new Exception("Cliente no encontrado"));
+    }
+
+    public void eliminarCliente(Long id) {
+        repo.deleteById(id);
+    }
+
+    public java.util.List<Cliente> listarClientes() {
+        return repo.findAll();
     }
 
 

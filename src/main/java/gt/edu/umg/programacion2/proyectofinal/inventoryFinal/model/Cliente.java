@@ -1,25 +1,30 @@
 package gt.edu.umg.programacion2.proyectofinal.inventoryFinal.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
-@Entity // Marca la class como entidad JPA → crea tabla en la BD
-@Table(name = "clientes") // Nombre de la tabla en la BD
-
+@Entity
+@Table(name = "clientes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email")
+})
 public class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // id interno autogenerado
+    private Long id;
 
-    @Column(nullable = false)
+    @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "Formato de email inválido")
     private String email;
 
-    @Column(nullable = false)
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
-    @Transient // ⚡ Este campo no se guarda en el repositorio/BD
+    // ✅ No lo guardamos en BD, solo para validar
+    @Transient
     private String confirmPassword;
 
     // Getters y setters
