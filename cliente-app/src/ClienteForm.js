@@ -1,89 +1,154 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 
-function ClienteForm({ clienteEdit, onSave }) {
-    const [nombre, setNombre] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+export default function ClienteForm() {
+    const [form, setForm] = useState({
+        nombreCompleto: "",
+        identificador: "",
+        fechaNacimiento: "",
+        telefono: "",
+        email: ""
+    });
 
-    useEffect(() => {
-        if (clienteEdit) {
-            setNombre(clienteEdit.nombre);
-            setEmail(clienteEdit.email);
-            setPassword(clienteEdit.password || "");
-            setConfirmPassword(clienteEdit.password || "");
+    const [mensaje, setMensaje] = useState("");
+    const [tipoMensaje, setTipoMensaje] = useState(""); // success, danger, warning
+
+    // Maneja cambios en los inputs
+    const handleChange = (e) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    // Validación simple de campos
+    const validarCampos = () => {
+        const { nombreCompleto, identificador, fechaNacimiento, telefono, email } = form;
+
+        if (!nombreCompleto || !identificador || !fechaNacimiento || !telefono || !email) {
+            setTipoMensaje("warning");
+            setMensaje("Debe completar todos los campos obligatorios");
+            return false;
         }
-    }, [clienteEdit]);
+
+        // Validación de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setTipoMensaje("danger");
+            setMensaje("Formato de email inválido");
+            return false;
+        }
+
+        // Validación de teléfono (solo números y mínimo 8 dígitos)
+        if (isNaN(telefono) || telefono.length < 8) {
+            setTipoMensaje("danger");
+            setMensaje("Número de teléfono inválido");
+            return false;
+        }
+
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validarCampos()) return;
+
+        const data = {
+            nombreCompleto: form.nombreCompleto,
+            identificador: form.identificador,
+            fechaNacimiento: form.fechaNacimiento,
+            telefono: Number(form.telefono),
+            email: form.email
+        };
+
         try {
-            if (clienteEdit) {
-                // ✅ Actualizar
-                await axios.put(`http://localhost:8081/clientes/${clienteEdit.id}`, {
-                    nombre,
-                    email,
-                    password,
-                    confirmPassword,
-                });
-                alert("Cliente actualizado");
+            const res = await axios.post("http://localhost:8081/clientes", data);
+
+            setTipoMensaje("success");
+            setMensaje(res.data.message);
+
+            setForm({
+                nombreCompleto: "",
+                identificador: "",
+                fechaNacimiento: "",
+                telefono: "",
+                email: ""
+            });
+
+        } catch (err) {
+            if (err.response) {
+                setTipoMensaje("danger");
+                setMensaje(err.response.data.message || "Error al registrar, por favor intente más tarde");
             } else {
-                // ✅ Crear
-                await axios.post("http://localhost:8081/clientes", {
-                    nombre,
-                    email,
-                    password,
-                    confirmPassword,
-                });
-                alert("Cliente registrado");
+                setTipoMensaje("danger");
+                setMensaje("Error de conexión con el servidor");
             }
-            setNombre("");
-            setEmail("");
-            setPassword("");
-            setConfirmPassword("");
-            onSave(); // recargar lista
-        } catch (error) {
-            alert("Error: " + (error.response?.data || error.message));
         }
     };
 
+
+
     return (
-        <form onSubmit={handleSubmit}>
-            <h2>{clienteEdit ? "Editar Cliente" : "Registrar Cliente"}</h2>
-            <input
-                type="text"
-                placeholder="Nombre"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-            />
-            <br />
-            <input
-                type="email"
-                placeholder="Correo"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <br />
-            <input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <br />
-            <input
-                type="password"
-                placeholder="Confirmar contraseña"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <br />
-            <button type="submit">
-                {clienteEdit ? "Actualizar" : "Registrar"}
-            </button>
-        </form>
+        <div className="container mt-3">
+            <h2>Agregar Cliente</h2>
+
+            {mensaje && (
+                <div className={`alert alert-${tipoMensaje}`} role="alert">
+                    {mensaje}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    name="nombreCompleto"
+                    placeholder="Nombre completo"
+                    value={form.nombreCompleto}
+                    onChange={handleChange}
+                    className="form-control mb-2"
+                />
+
+                <input
+                    type="text"
+                    name="identificador"
+                    placeholder="Identificador (DPI, NIT, etc.)"
+                    value={form.identificador}
+                    onChange={handleChange}
+                    className="form-control mb-2"
+                />
+
+                <input
+                    type="date"
+                    name="fechaNacimiento"
+                    value={form.fechaNacimiento}
+                    onChange={handleChange}
+                    className="form-control mb-2"
+                />
+
+
+                <input
+                    type="text"
+                    name="telefono"
+                    placeholder="Teléfono"
+                    value={form.telefono}
+                    onChange={handleChange}
+                    className="form-control mb-2"
+                />
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="form-control mb-2"
+                />
+
+                <button type="submit" className="btn btn-primary">
+                    Guardar
+                </button>
+            </form>
+        </div>
     );
 }
-
-export default ClienteForm;
